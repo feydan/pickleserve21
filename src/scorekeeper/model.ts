@@ -119,6 +119,11 @@ export function isSessionComplete(session: Session): boolean {
   );
 }
 
+/** A saved session that played all trials (as opposed to one saved early). */
+export function isFullSession(session: Session): boolean {
+  return completedTrials(session).length >= TRIALS_PER_SESSION;
+}
+
 export function hasAnyBalls(session: Session): boolean {
   return session.trials.some((t) => t.balls.length > 0);
 }
@@ -187,12 +192,14 @@ export function isSession(value: unknown): value is Session {
     return false;
   }
   const limit = ballLimit(s.mode);
-  return s.trials.every((t: unknown) => {
+  const lastIndex = s.trials.length - 1;
+  return s.trials.every((t: unknown, i: number) => {
     if (typeof t !== 'object' || t === null) return false;
     const trial = t as Record<string, unknown>;
     return (
       Array.isArray(trial.balls) &&
-      trial.balls.length <= limit &&
+      // Only the last trial may be in progress; earlier ones must be full.
+      (i === lastIndex ? trial.balls.length <= limit : trial.balls.length === limit) &&
       trial.balls.every(isBallScore) &&
       typeof trial.total === 'number'
     );

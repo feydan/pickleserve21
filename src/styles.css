@@ -1329,6 +1329,11 @@ kbd {
   outline-offset: 1px;
 }
 
+.field input[type='text']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .seg {
   display: flex;
   min-width: 0;

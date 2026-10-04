@@ -165,3 +165,39 @@ describe('in-memory fallback', () => {
     }
   });
 });
+
+describe('external changes', () => {
+  function storageEvent(key: string | null): Event {
+    return Object.assign(new Event('storage'), { key });
+  }
+
+  it('reports changes to its own keys only', () => {
+    const events = new EventTarget();
+    const store = createStore(new MemoryStorage(), events);
+    const seen: string[] = [];
+    store.onExternalChange((key) => seen.push(key));
+    events.dispatchEvent(storageEvent(HISTORY_KEY));
+    events.dispatchEvent(storageEvent(CURRENT_KEY));
+    events.dispatchEvent(storageEvent('something.else'));
+    expect(seen).toEqual([HISTORY_KEY, CURRENT_KEY]);
+  });
+
+  it('reports both keys when storage is cleared', () => {
+    const events = new EventTarget();
+    const store = createStore(new MemoryStorage(), events);
+    const seen: string[] = [];
+    store.onExternalChange((key) => seen.push(key));
+    events.dispatchEvent(storageEvent(null));
+    expect(seen).toEqual([HISTORY_KEY, CURRENT_KEY]);
+  });
+
+  it('ignores external changes once it has fallen back to memory', () => {
+    const events = new EventTarget();
+    const store = createStore(new ThrowingStorage(), events);
+    store.loadHistory();
+    const seen: string[] = [];
+    store.onExternalChange((key) => seen.push(key));
+    events.dispatchEvent(storageEvent(HISTORY_KEY));
+    expect(seen).toEqual([]);
+  });
+});

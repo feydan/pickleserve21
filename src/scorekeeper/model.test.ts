@@ -9,6 +9,7 @@ import {
   currentTrial,
   finalizeSession,
   hitGoal,
+  isFullSession,
   isSession,
   isSessionComplete,
   isTrialComplete,
@@ -158,6 +159,15 @@ describe('trials and average', () => {
   });
 });
 
+describe('full sessions', () => {
+  it('only counts sessions with all trials completed', () => {
+    const one = play(createSession({}, NOW, 'a'), twelve(5));
+    expect(isFullSession(finalizeSession(one))).toBe(false);
+    const three = playTrials(createSession({}, NOW, 'b'), [twelve(1), twelve(3), twelve(5)]);
+    expect(isFullSession(finalizeSession(three))).toBe(true);
+  });
+});
+
 describe('mode changes', () => {
   it('allows changing mode before any ball', () => {
     const s = setMode(createSession({}, NOW, 'a'), 'advanced');
@@ -183,6 +193,12 @@ describe('validation', () => {
     expect(isSession({ ...good, trials: [{ balls: [2], total: 2 }] })).toBe(false);
     expect(isSession({ ...good, trials: [{ balls: twelve(1).concat([1]), total: 13 }] })).toBe(false);
     expect(isSession({ ...good, trials: [makeTrial(), makeTrial(), makeTrial(), makeTrial()] })).toBe(false);
+  });
+
+  it('rejects an unfinished trial before the last one', () => {
+    const good = createSession({}, NOW, 'a');
+    expect(isSession({ ...good, trials: [makeTrial([5, 5]), makeTrial(twelve(1))] })).toBe(false);
+    expect(isSession({ ...good, trials: [makeTrial(twelve(1)), makeTrial([5, 5])] })).toBe(true);
   });
 
   it('normalizes stale totals', () => {
