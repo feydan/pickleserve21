@@ -1,6 +1,6 @@
 // History panel: past sessions list, personal best and an SVG sparkline.
 
-import { GOAL, bestTrial, type Session } from './model';
+import { GOAL, TRIALS_PER_SESSION, bestTrial, isFullSession, type Mode, type Session } from './model';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -25,10 +25,14 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-/** Personal best = highest session average for each mode. Returns the best session per mode. */
-export function personalBests(history: readonly Session[]): Map<Session['mode'], Session> {
-  const best = new Map<Session['mode'], Session>();
+/**
+ * Personal best = highest session average for each mode. Returns the best session per mode.
+ * Only full sessions count, so one lucky trial saved early can't beat a whole session.
+ */
+export function personalBests(history: readonly Session[]): Map<Mode, Session> {
+  const best = new Map<Mode, Session>();
   for (const s of history) {
+    if (!isFullSession(s)) continue;
     const current = best.get(s.mode);
     if (!current || s.average > current.average) best.set(s.mode, s);
   }
@@ -48,14 +52,16 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
   return node;
 }
 
-export function renderSparkline(container: HTMLElement, history: readonly Session[]): void {
+/** Draws the averages of one mode only: 12-ball and 10-ball scores aren't comparable. */
+export function renderSparkline(container: HTMLElement, history: readonly Session[], mode: Mode): void {
   container.replaceChildren();
-  if (history.length === 0) return;
+  const sessions = history.filter((s) => s.mode === mode);
+  if (sessions.length === 0) return;
 
   const W = 300;
   const H = 64;
   const PAD = 6;
-  const values = history.map((s) => s.average);
+  const values = sessions.map((s) => s.average);
   const max = Math.max(GOAL + 6, ...values);
   const x = (i: number) => (values.length === 1 ? W / 2 : PAD + (i * (W - 2 * PAD)) / (values.length - 1));
   const y = (v: number) => H - PAD - (v / max) * (H - 2 * PAD);
@@ -64,7 +70,7 @@ export function renderSparkline(container: HTMLElement, history: readonly Sessio
     viewBox: `0 0 ${W} ${H}`,
     preserveAspectRatio: 'none',
     role: 'img',
-    'aria-label': `Session averages over time: ${values.map(formatScore).join(', ')}. Goal line at ${GOAL}.`,
+    'aria-label': `${modeLabel({ mode })} session averages over time: ${values.map(formatScore).join(', ')}. Goal line at ${GOAL}.`,
   });
   root.append(svg('line', { class: 'spark-goal', x1: 0, x2: W, y1: y(GOAL), y2: y(GOAL) }));
   if (values.length > 1) {
@@ -83,7 +89,7 @@ export function renderSparkline(container: HTMLElement, history: readonly Sessio
   container.append(root);
 }
 
-export function renderHistory(els: HistoryElements, history: readonly Session[]): void {
+export function renderHistory(els: HistoryElements, history: readonly Session[], mode: Mode): void {
   const newestFirst = [...history].reverse();
   const bests = personalBests(history);
   const bestIds = new Set([...bests.values()].map((s) => s.id));
@@ -99,7 +105,8 @@ export function renderHistory(els: HistoryElements, history: readonly Session[])
 
       const details = [modeLabel(s), `${s.size} target`];
       if (s.placement) details.push(s.placement);
-      details.push(`${s.trials.length} trial${s.trials.length === 1 ? '' : 's'}`, `best ${bestTrial(s)}`);
+      const trials = `${s.trials.length} trial${s.trials.length === 1 ? '' : 's'}`;
+      details.push(s.trials.length < TRIALS_PER_SESSION ? `${trials} (partial)` : trials, `best ${bestTrial(s)}`);
       const sub = el('span', 'hist-item__sub', details.join(' · '));
 
       const avg = el('span', 'hist-item__avg', formatScore(s.average));
@@ -120,5 +127,5 @@ export function renderHistory(els: HistoryElements, history: readonly Session[])
   els.pb.hidden = pbParts.length === 0;
   els.pb.textContent = pbParts.length ? `Personal best: ${pbParts.join(' · ')}` : '';
 
-  renderSparkline(els.spark, history);
+  renderSparkline(els.spark, history, mode);
 }

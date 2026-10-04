@@ -8,6 +8,8 @@ export const CURRENT_KEY = 'ps21.current.v1';
 export const HISTORY_LIMIT = 200;
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+type EventSource = Pick<EventTarget, 'addEventListener'>;
+export type StoreKey = typeof HISTORY_KEY | typeof CURRENT_KEY;
 
 export interface ScoreStore {
   loadHistory(): Session[];
@@ -16,6 +18,8 @@ export interface ScoreStore {
   saveCurrent(session: Session | null): void;
   /** True while values are actually being persisted to the backend. */
   readonly persistent: boolean;
+  /** Calls back when another tab changes a stored value. */
+  onExternalChange(listener: (key: StoreKey) => void): void;
 }
 
 function defaultBackend(): StorageLike | null {
@@ -24,6 +28,10 @@ function defaultBackend(): StorageLike | null {
   } catch {
     return null;
   }
+}
+
+function defaultEvents(): EventSource | null {
+  return typeof globalThis.addEventListener === 'function' ? globalThis : null;
 }
 
 function parse(raw: string | null): unknown {
@@ -35,7 +43,10 @@ function parse(raw: string | null): unknown {
   }
 }
 
-export function createStore(backend: StorageLike | null | undefined = defaultBackend()): ScoreStore {
+export function createStore(
+  backend: StorageLike | null | undefined = defaultBackend(),
+  events: EventSource | null = defaultEvents(),
+): ScoreStore {
   let store: StorageLike | null = backend ?? null;
   const memory = new Map<string, string>();
 
@@ -81,6 +92,16 @@ export function createStore(backend: StorageLike | null | undefined = defaultBac
     },
     saveCurrent(session) {
       write(CURRENT_KEY, session ? JSON.stringify(session) : null);
+    },
+    onExternalChange(listener) {
+      // The browser fires `storage` only in the *other* tabs of the same origin.
+      // A null key means the whole storage was cleared.
+      events?.addEventListener('storage', (e) => {
+        if (!store) return;
+        const key = (e as StorageEvent).key;
+        if (key === null || key === HISTORY_KEY) listener(HISTORY_KEY);
+        if (key === null || key === CURRENT_KEY) listener(CURRENT_KEY);
+      });
     },
   };
 }
