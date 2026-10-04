@@ -1228,6 +1228,207 @@ kbd {
   background: var(--navy-900);
 }
 
+/* server's-eye view (perspective serve animation, src/serve-view) */
+.pov {
+  max-width: 880px;
+  margin: 48px auto 0;
+}
+
+.pov__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.pov__eyebrow {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.pov__picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pov__picker .tab[aria-pressed='true'] {
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-on-color);
+}
+
+.pv-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--navy-900);
+  box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.7);
+}
+
+.pv-sky-top {
+  stop-color: #070e22;
+}
+
+.pv-sky-bottom {
+  stop-color: var(--navy-700);
+}
+
+.pv-wall {
+  fill: #18284f;
+}
+
+.pv-wall--side {
+  fill: #13214a;
+}
+
+.pv-curtain {
+  fill: #1d3a8a;
+  opacity: 0.85;
+}
+
+.pv-light {
+  fill: #e9efff;
+  opacity: 0.8;
+}
+
+.pv-floor {
+  fill: #1a2442;
+}
+
+.pv-lines line {
+  stroke: var(--line);
+  stroke-linecap: round;
+}
+
+.pv-num {
+  font-family: var(--font-head);
+  font-weight: 800;
+  fill: var(--ink-on-color);
+  opacity: 0.85;
+}
+
+.pv-shadow {
+  fill: #000;
+}
+
+.pv-ripple {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2.5;
+}
+
+.pv-net__fill {
+  fill: rgb(11 21 48 / 0.35);
+}
+
+.pv-net__mesh {
+  fill: none;
+  stroke: rgb(244 246 250 / 0.28);
+  stroke-width: 0.7;
+}
+
+.pv-net__tape {
+  fill: none;
+  stroke: var(--line);
+  stroke-linecap: round;
+}
+
+.pv-net__post {
+  stroke: #c9d1e3;
+  stroke-linecap: round;
+}
+
+.pv-receiver__body {
+  fill: var(--navy-900);
+  stroke: var(--line);
+  stroke-width: 0.12;
+}
+
+.pv-receiver__head {
+  fill: var(--navy-900);
+  stroke: var(--line);
+  stroke-width: 0.12;
+}
+
+.pv-receiver__arm {
+  stroke: var(--line);
+  stroke-width: 0.22;
+  stroke-linecap: round;
+}
+
+.pv-receiver__paddle {
+  fill: var(--muted);
+}
+
+.pv-receiver__letter {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 1.3px;
+  fill: var(--line);
+}
+
+.pv-trail {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2.5;
+  stroke-dasharray: 7 6;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.pv-ball .ball {
+  stroke-width: 0.03;
+}
+
+.pv-pop {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 46px;
+  fill: var(--line);
+  stroke: var(--navy-900);
+  stroke-width: 5px;
+  paint-order: stroke;
+}
+
+.pv-pop--5 {
+  fill: var(--red);
+}
+
+.pv-pop--3 {
+  fill: var(--green);
+}
+
+.pv-pop--1 {
+  fill: var(--yellow);
+}
+
+.pv-paddle__face {
+  fill: var(--navy-600);
+}
+
+.pv-paddle__edge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 6;
+}
+
+.pv-paddle__handle {
+  fill: #0d1834;
+  stroke: rgb(244 246 250 / 0.4);
+  stroke-width: 2;
+}
+
 .sideline-cards {
   margin-top: 48px;
 }
