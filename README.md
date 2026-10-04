@@ -34,4 +34,4 @@ One-time setup:
 
 ## Content
 
-All product and game content comes from `public/pickleserve_21_instructions.pdf` (a copy is served at `/pickleserve_21_instructions.pdf`). Open TODOs are marked with `<!-- TODO -->` in `index.html`: real product photos and an `og:image`.
+All product and game content comes from `public/pickleserve_21_instructions.pdf` (a copy is served at `/pickleserve_21_instructions.pdf`). Open TODOs are marked with `<!-- TODO -->` in `index.html` (currently: real product photos). The social preview image is `public/og-image.jpg` (1200×630).
