@@ -1884,20 +1884,6 @@ kbd {
   margin-bottom: 24px;
 }
 
-.sheet__brand {
-  font-family: var(--font-head);
-  font-weight: 800;
-  font-size: 1.6rem;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.sheet__tag {
-  font-style: italic;
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
 .sheet__title {
   font-size: clamp(1.5rem, 4vw, 2rem);
   margin: 0 0 4px;
@@ -2076,28 +2062,55 @@ kbd {
 /* ==========================================================================
    Care, contact, footer
    ========================================================================== */
-.ticks {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 10px;
+.gear {
+  display: flex;
+  flex-direction: column;
 }
 
-.ticks li {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  gap: 8px;
+.gear__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: 18px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--navy-900);
 }
 
-.ticks li::before {
-  content: '';
-  width: 14px;
-  height: 14px;
-  margin-top: 5px;
-  border-radius: 0 0 0 100%;
-  background: conic-gradient(from 0deg at 0 100%, var(--red) 0 100%);
-  transform: rotate(90deg);
+.gear-label {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 5.5px;
+  letter-spacing: 0.08em;
+  fill: var(--muted);
+}
+
+.zone-num .gear-num {
+  fill: #fff;
+  font-size: 14px;
+}
+
+.gear-tube {
+  fill: rgb(244 246 250 / 0.08);
+  stroke: var(--muted);
+  stroke-width: 0.8;
+}
+
+.gear-tube__cap {
+  fill: var(--navy-600);
+  stroke: var(--muted);
+  stroke-width: 0.8;
+}
+
+.gear-tube__wire {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+}
+
+.care-card {
+  margin-top: 16px;
 }
 
 .section--cta {
@@ -2220,36 +2233,42 @@ kbd {
 }
 
 /* ==========================================================================
-   Print — "Print scoresheet" shows only the scoresheet, black on white
+   Print — printing the page (Ctrl+P or the PDF build) yields only the
+   scoresheet, black on white, on a single page
    ========================================================================== */
 @media print {
   @page {
+    size: letter;
     margin: 12mm;
   }
 
+  :root {
+    color-scheme: light;
+  }
+
+  html,
   body {
     background: #fff !important;
     color: #000 !important;
+    overflow: visible;
   }
 
-  .site-header,
   .skip-link,
-  .no-print {
+  .site-header,
+  .site-footer,
+  .no-print,
+  main > section:not(#scoresheet) {
     display: none !important;
   }
 
-  body.print-scoresheet .site-footer,
-  body.print-scoresheet main > section:not(#scoresheet) {
-    display: none !important;
-  }
-
-  body.print-scoresheet #scoresheet {
+  #scoresheet {
     padding: 0;
     background: #fff;
   }
 
-  body.print-scoresheet #scoresheet::before {
-    display: none;
+  #scoresheet .container {
+    padding: 0;
+    max-width: none;
   }
 
   .section::before {
@@ -2259,29 +2278,53 @@ kbd {
   .sheet {
     background: #fff;
     box-shadow: none;
+    border-radius: 0;
     padding: 0;
     max-width: none;
-    font-size: 11pt;
-  }
-
-  .sheet-balls {
-    grid-template-columns: repeat(6, 1fr);
-  }
-
-  .sheet-balls li {
-    height: 30px;
-  }
-
-  .sheet__trials {
-    gap: 10px;
+    font-size: 10.5pt;
+    break-inside: avoid;
   }
 
   .sheet__header {
     margin-bottom: 14px;
   }
 
-  .js-reveal .reveal {
-    opacity: 1 !important;
-    transform: none !important;
+  .sheet__title {
+    font-size: 20pt;
+  }
+
+  .sheet__fields {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .sheet__trials {
+    gap: 16px;
+  }
+
+  .sheet-trial {
+    padding: 8px 12px;
+  }
+
+  .sheet-trial__label {
+    font-size: 13pt;
+    margin-bottom: 6px;
+  }
+
+  .sheet-balls {
+    grid-template-columns: repeat(6, 1fr);
+    margin-bottom: 8px;
+  }
+
+  .sheet-balls li {
+    height: 48px;
+  }
+
+  .sheet__total {
+    margin-top: 14px;
+  }
+
+  .sheet__key {
+    margin-top: 14px;
   }
 }

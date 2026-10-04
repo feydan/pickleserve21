@@ -110,16 +110,6 @@ function initTabs(): void {
   }
 }
 
-function initPrint(): void {
-  const button = document.getElementById('print-sheet');
-  if (!button) return;
-  window.addEventListener('afterprint', () => document.body.classList.remove('print-scoresheet'));
-  button.addEventListener('click', () => {
-    document.body.classList.add('print-scoresheet');
-    window.print();
-  });
-}
-
 function initYear(): void {
   const year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
@@ -128,7 +118,6 @@ function initYear(): void {
 initNav();
 initReveal();
 initTabs();
-initPrint();
 initYear();
 
 const sk = document.getElementById('sk');

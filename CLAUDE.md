@@ -22,6 +22,7 @@ Node 22.12+ (`.nvmrc`).
 - `npm run typecheck` — `tsc --noEmit`
 - `npm test` — vitest (`src/scorekeeper/*.test.ts`)
 - `npm run build` — typecheck + production build to `dist/`; `npm run preview` serves it
+- `npm run scoresheet:pdf` — regenerate `public/pickleserve21_scoresheet.pdf` (headless Chromium prints the built page). Rerun after changing scoresheet markup or print CSS.
 
 Run `typecheck` and `test` before considering a change done; CI runs both and blocks deploy on failure.
 
@@ -36,8 +37,8 @@ GitHub Pages via `.github/workflows/deploy.yml` on push to `main` (typecheck, te
 ## Architecture
 
 - `index.html` — all content sections and inline SVG. A hidden `svg.svg-defs` holds shared symbols: `#court-base` (20×44 ft court, 1 unit = 1 ft, far side at top, server at bottom), `#fan-mat` (quarter circles r 3 / 5.5 / 8, corner at origin) and `#arrow`. Strategy tab panels reference them with `<use>` + transforms. SVG colours come from CSS classes (`.z5` / `.z3` / `.z1`, `.court-*`, `.serve-path`, …), not inline fills.
-- `src/styles.css` — design tokens, layout, components, reveal animation, `@media print` (`body.print-scoresheet` hides everything except `#scoresheet`).
-- `src/main.ts` — font/CSS imports, mobile nav + active-section highlight, scroll reveal (`.js-reveal` on `<html>`, skipped under reduced motion), accessible tabs, print button, scorekeeper init.
+- `src/styles.css` — design tokens, layout, components, reveal animation, `@media print` (printing the page always yields only `#scoresheet`, on one letter/A4 page).
+- `src/main.ts` — font/CSS imports, mobile nav + active-section highlight, scroll reveal (`.js-reveal` on `<html>`, skipped under reduced motion), accessible tabs, scorekeeper init.
 - `src/scorekeeper/model.ts` — pure logic, no DOM: sessions, trials, `addBall` / `undo` / `nextTrial`, averages, validation. Functions return the same object when an action is rejected (callers can compare by reference).
 - `src/scorekeeper/storage.ts` — `createStore(backend?)`; localStorage keys `ps21.history.v1` / `ps21.current.v1`. Validates and normalizes on load; falls back to in-memory storage on any error. Bump the key version if the stored shape changes incompatibly.
 - `src/scorekeeper/ui.ts` — DOM wiring, keyboard shortcuts (0/1/3/5, U) while the scorekeeper is on screen, in-page confirms (no `window.confirm`). A session auto-saves to history when its 3rd trial completes, or via "Save session"; "saved" means its id is in history.

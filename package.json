@@ -11,7 +11,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "scoresheet:pdf": "bash scripts/scoresheet-pdf.sh"
   },
   "devDependencies": {
     "@fontsource/barlow-condensed": "^5.3.0",
