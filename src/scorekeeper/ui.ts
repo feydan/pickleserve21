@@ -25,7 +25,7 @@ import {
   type BallScore,
   type Session,
 } from './model';
-import { HISTORY_LIMIT, createStore, type ScoreStore } from './storage';
+import { CURRENT_KEY, HISTORY_LIMIT, createStore, type ScoreStore } from './storage';
 import { formatScore, renderHistory, type HistoryElements } from './history';
 
 const ZONE_NAMES: Record<BallScore, string> = { 0: 'Miss', 1: 'Yellow', 3: 'Green', 5: 'Red' };
@@ -79,6 +79,8 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
   const modeInputs = [...form.querySelectorAll<HTMLInputElement>('input[name="mode"]')];
   const sizeInputs = [...form.querySelectorAll<HTMLInputElement>('input[name="size"]')];
   const modeLock = req<HTMLElement>(root, '#sk-mode-lock');
+  const modeLockText = modeLock.textContent ?? '';
+  const padGroup = req<HTMLElement>(root, '.sk-pad');
 
   const ringBar = req<SVGCircleElement>(root, '#sk-ring-bar');
   const totalVisual = req<HTMLElement>(root, '#sk-total-visual');
@@ -117,13 +119,38 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
     storageNote.hidden = store.persistent;
   }
 
+  function refreshHistory(): void {
+    renderHistory(historyEls, history, session.mode);
+  }
+
   function saveToHistory(): void {
     const finished = finalizeSession(session);
     if (finished.trials.length === 0) return;
-    history = [...history.filter((h) => h.id !== finished.id), finished].slice(-HISTORY_LIMIT);
+    // Merge into a fresh read so sessions saved from another tab aren't overwritten.
+    const latest = store.loadHistory();
+    history = [...latest.filter((h) => h.id !== finished.id), finished].slice(-HISTORY_LIMIT);
     store.saveHistory(history);
     storageNote.hidden = store.persistent;
-    renderHistory(historyEls, history);
+    refreshHistory();
+  }
+
+  function freshSession(): Session {
+    return createSession({
+      name: session.name,
+      mode: session.mode,
+      size: session.size,
+      placement: session.placement,
+    });
+  }
+
+  /**
+   * A session that was saved is finished for good. If its history entry disappears
+   * (history cleared here or in another tab), move on instead of re-opening it.
+   */
+  function leaveRemovedSession(wasSaved: boolean): void {
+    if (!wasSaved || isSaved()) return;
+    session = freshSession();
+    persist();
   }
 
   function syncSetupFromSession(): void {
@@ -146,9 +173,14 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
     const saved = isSaved();
     const locked = hasAnyBalls(session);
 
-    // setup
-    for (const input of modeInputs) input.disabled = locked && input.value !== session.mode;
-    modeLock.hidden = !locked;
+    // setup: mode locks once scoring starts; everything locks once the session is saved,
+    // so edits can't drift from the history entry.
+    for (const input of modeInputs) input.disabled = saved || (locked && input.value !== session.mode);
+    for (const input of sizeInputs) input.disabled = saved;
+    nameInput.disabled = saved;
+    placementInput.disabled = saved;
+    modeLock.hidden = !locked && !saved;
+    modeLock.textContent = saved ? 'Session saved. Start a new session to change the setup.' : modeLockText;
 
     // ring + totals
     const pct = Math.min(100, (trial.total / GOAL) * 100);
@@ -272,14 +304,7 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
   }
 
   function startNew(): void {
-    update(
-      createSession({
-        name: session.name,
-        mode: session.mode,
-        size: session.size,
-        placement: session.placement,
-      }),
-    );
+    update(freshSession());
     announce('New session started.');
   }
 
@@ -311,9 +336,12 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
   });
   clearBtn.addEventListener('click', () => {
     inlineConfirm(clearWrap, clearBtn, 'Delete all saved sessions?', () => {
+      const wasSaved = isSaved();
       history = [];
       store.saveHistory(history);
-      renderHistory(historyEls, history);
+      leaveRemovedSession(wasSaved);
+      syncSetupFromSession();
+      refreshHistory();
       render();
       announce('History cleared.');
     });
@@ -326,6 +354,7 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
     input.addEventListener('change', () => {
       if (input.checked && isMode(input.value)) update(setMode(session, input.value));
       syncSetupFromSession();
+      refreshHistory();
     });
   }
   for (const input of sizeInputs) {
@@ -334,18 +363,38 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
     });
   }
 
-  // Keyboard shortcuts while the scorekeeper is on screen.
+  // Keep in sync with other tabs: they write the same history and current session.
+  store.onExternalChange((key) => {
+    const wasSaved = isSaved();
+    if (key === CURRENT_KEY) {
+      session = store.loadCurrent() ?? freshSession();
+    } else {
+      history = store.loadHistory();
+      leaveRemovedSession(wasSaved);
+    }
+    syncSetupFromSession();
+    refreshHistory();
+    render();
+  });
+
+  // Keyboard shortcuts only while the score pad is mostly on screen, so digits typed
+  // elsewhere on the page aren't captured just because the section peeks into view.
   let onScreen = false;
   if ('IntersectionObserver' in window) {
-    new IntersectionObserver((entries) => {
-      for (const entry of entries) onScreen = entry.isIntersecting;
-    }).observe(root);
+    new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) onScreen = entry.isIntersecting && entry.intersectionRatio >= 0.5;
+      },
+      { threshold: [0, 0.5, 1] },
+    ).observe(padGroup);
   } else {
     onScreen = true;
   }
 
   document.addEventListener('keydown', (e) => {
     if (!onScreen || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+    // A Reset/Clear confirmation is open: don't let shortcuts change the session under it.
+    if (root.querySelector('[data-confirming]')) return;
     const target = e.target as HTMLElement | null;
     const typing =
       target instanceof HTMLTextAreaElement ||
@@ -373,6 +422,6 @@ export function initScorekeeper(root: HTMLElement, store: ScoreStore = createSto
 
   syncSetupFromSession();
   storageNote.hidden = store.persistent;
-  renderHistory(historyEls, history);
+  refreshHistory();
   render();
 }
