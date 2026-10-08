@@ -4,6 +4,7 @@ import '@fontsource/inter/latin-400.css';
 import '@fontsource/inter/latin-600.css';
 import './styles.css';
 import { initScorekeeper } from './scorekeeper/ui';
+import { initHeroServe } from './hero-serve';
 import { initRally } from './rally';
 import { initServeView } from './serve-view';
 
@@ -121,7 +122,10 @@ initNav();
 initReveal();
 initTabs();
 initYear();
-initRally(reducedMotion);
+const rally = initRally(reducedMotion);
+
+const hero = document.getElementById('top');
+if (hero) initHeroServe(hero, reducedMotion, { handoff: rally });
 
 const pov = document.getElementById('pov');
 if (pov) initServeView(pov, document.querySelector<HTMLElement>('#strategy [role="tablist"]'), reducedMotion);

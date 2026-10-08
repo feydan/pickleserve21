@@ -68,14 +68,24 @@ function addMarks(): HTMLElement[] {
   return marks;
 }
 
-export function initRally(reducedMotion: MediaQueryList): void {
-  if (reducedMotion.matches) return;
+/** Where the hero's opening serve left its ball, relative to the hero canvas (see hero-serve). */
+export interface ServeRest {
+  canvas: HTMLCanvasElement;
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** Returns true when the rally is running (it then takes the hero's ball over once it rests). */
+export function initRally(reducedMotion: MediaQueryList): boolean {
+  if (reducedMotion.matches) return false;
   const sections = RALLY_STOPS.map((s) => document.getElementById(s.id));
-  const end = document.getElementById(RALLY_END);
-  if (sections.some((s) => !s) || !end) return;
+  const endNode = document.querySelector(RALLY_END);
+  if (sections.some((s) => !s) || !endNode) return false;
+  const end: Element = endNode;
 
   const marks = addMarks();
-  if (marks.length !== RALLY_STOPS.length) return;
+  if (marks.length !== RALLY_STOPS.length) return false;
 
   const svg = el('svg', { class: 'rally', 'aria-hidden': 'true', focusable: 'false' });
   const trail = el('polyline', { class: 'rally-trail' });
@@ -96,6 +106,7 @@ export function initRally(reducedMotion: MediaQueryList): void {
   let lastScroll = window.scrollY;
   let lastScore = -1;
   let raf = 0;
+  let serve: ServeRest | null = null;
 
   /** Viewport point of the paddle's hitting edge for a given rotation. */
   const contactAt = (angle: number): Vec => {
@@ -136,7 +147,13 @@ export function initRally(reducedMotion: MediaQueryList): void {
           points: stop.points,
         };
       }),
-      endTop: docY(end!),
+      endTop: docY(end),
+      serve: serve
+        ? (() => {
+            const r = serve.canvas.getBoundingClientRect();
+            return { x: r.left + serve.x, y: r.top + y + serve.y };
+          })()
+        : null,
     };
     rally = buildRally(layout);
     svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
@@ -176,12 +193,15 @@ export function initRally(reducedMotion: MediaQueryList): void {
       const held = contactAt(angle);
       b = { x: held.x + slide, y: held.y };
     }
-    const s = (1 + f.height * 0.6) * scale;
+    // Coming out of the hero, the ball starts at the size it was drawn there.
+    const k = f.intro === null || !serve ? 1 : f.intro * f.intro * (3 - 2 * f.intro);
+    const base = serve && f.intro !== null ? serve.r / BALL_R + (scale - serve.r / BALL_R) * k : scale;
+    const s = (1 + f.height * 0.6) * base;
     ball.setAttribute('transform', `translate(${b.x} ${b.y}) scale(${s})`);
     if (f.shadow) {
       shadow.setAttribute('cx', String(f.shadow.x));
       shadow.setAttribute('cy', String(f.shadow.y));
-      shadow.style.opacity = String(0.4 * (1 - f.height * 0.6));
+      shadow.style.opacity = String(0.4 * (1 - f.height * 0.6) * Math.min(1, k * 4));
     } else {
       shadow.style.opacity = '0';
     }
@@ -219,6 +239,23 @@ export function initRally(reducedMotion: MediaQueryList): void {
   lastScroll = window.scrollY;
   draw();
   const listening = new AbortController();
+  // Hand-off with the hero's opening serve: take its ball once it rests, give it back on replay.
+  window.addEventListener(
+    'hero-serve:rest',
+    (e) => {
+      serve = (e as CustomEvent<ServeRest>).detail;
+      remeasure();
+    },
+    { signal: listening.signal },
+  );
+  window.addEventListener(
+    'hero-serve:play',
+    () => {
+      serve = null;
+      remeasure();
+    },
+    { signal: listening.signal },
+  );
   const resizes = new ResizeObserver(remeasure);
   window.addEventListener('scroll', schedule, { passive: true, signal: listening.signal });
   window.addEventListener('resize', remeasure, { signal: listening.signal });
@@ -236,4 +273,5 @@ export function initRally(reducedMotion: MediaQueryList): void {
     },
     { signal: listening.signal },
   );
+  return true;
 }
