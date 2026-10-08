@@ -502,6 +502,14 @@ kbd {
   justify-self: center;
 }
 
+.hero-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
 .hero-svg {
   display: block;
   width: 100%;
