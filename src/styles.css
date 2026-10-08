@@ -2466,6 +2466,191 @@ kbd {
 }
 
 /* ==========================================================================
+   Scroll rally — a paddle rides the right edge and returns a ball into each
+   section; landings mark the section titles (see src/rally)
+   ========================================================================== */
+.rally {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 40;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.rally-paddle__face {
+  fill: var(--court-blue);
+  stroke: var(--line);
+  stroke-width: 3;
+  transition: fill 0.3s;
+}
+
+.rally-paddle__inlay {
+  fill: none;
+  stroke: rgb(244 246 250 / 0.28);
+  stroke-width: 1.5;
+}
+
+.rally-paddle__body.is-21 .rally-paddle__face {
+  fill: var(--red-strong);
+}
+
+.rally-paddle__handle {
+  fill: var(--navy-900);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.rally-paddle__throat {
+  fill: var(--line);
+}
+
+.rally-paddle__grip {
+  stroke: rgb(244 246 250 / 0.45);
+  stroke-width: 2;
+}
+
+.rally-paddle {
+  filter: drop-shadow(0 10px 14px rgb(0 0 0 / 0.45));
+}
+
+.rally-score {
+  font-family: var(--font-head);
+  font-weight: 800;
+  fill: #fff;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rally-score.is-pop {
+  animation: rally-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.rally-ball {
+  filter: drop-shadow(0 0 6px rgb(244 246 250 / 0.35));
+}
+
+.rally-ball .ball {
+  stroke-width: 0.6;
+}
+
+.rally-shadow {
+  fill: #000;
+}
+
+.rally-trail {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-dasharray: 5 6;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.rally-impact {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rally-impact.is-hit {
+  animation: rally-impact 0.5s ease-out;
+}
+
+/* Bounce mark at the end of each section title: an empty court spot until the
+   ball lands, then the zone it hit */
+.rally-mark {
+  --zc: var(--line);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 0.72em;
+  height: 0.72em;
+  margin-left: 0.08em;
+  vertical-align: 0.06em;
+  border-radius: 50%;
+  border: 2px dashed rgb(244 246 250 / 0.35);
+  color: transparent;
+  font-size: 0.62em;
+  line-height: 1;
+  letter-spacing: 0;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+
+.rally-mark--5 {
+  --zc: var(--red-strong);
+}
+
+.rally-mark--3 {
+  --zc: var(--green);
+}
+
+.rally-mark--1 {
+  --zc: var(--yellow);
+}
+
+.rally-mark.is-landed {
+  background: var(--zc);
+  border: 2px solid var(--zc);
+  color: var(--ink-on-color);
+}
+
+.rally-mark--5.is-landed {
+  color: #fff;
+}
+
+.rally-mark.is-bounce {
+  animation: rally-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.rally-mark.is-bounce::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--zc);
+  animation: rally-ripple 0.7s ease-out forwards;
+}
+
+@keyframes rally-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rally-ripple {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes rally-impact {
+  from {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
    Reveal on scroll (only when JS enables it and motion is allowed)
    ========================================================================== */
 @media (prefers-reduced-motion: no-preference) {
@@ -2519,6 +2704,8 @@ kbd {
   }
 
   .skip-link,
+  .rally,
+  .rally-mark,
   .site-header,
   .site-footer,
   .no-print,

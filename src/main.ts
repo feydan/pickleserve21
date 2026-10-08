@@ -4,6 +4,7 @@ import '@fontsource/inter/latin-400.css';
 import '@fontsource/inter/latin-600.css';
 import './styles.css';
 import { initScorekeeper } from './scorekeeper/ui';
+import { initRally } from './rally';
 import { initServeView } from './serve-view';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -120,6 +121,7 @@ initNav();
 initReveal();
 initTabs();
 initYear();
+initRally(reducedMotion);
 
 const pov = document.getElementById('pov');
 if (pov) initServeView(pov, document.querySelector<HTMLElement>('#strategy [role="tablist"]'), reducedMotion);
