@@ -568,6 +568,89 @@ kbd {
   letter-spacing: 0.08em;
 }
 
+/* Cinematic hero: canvas serve behind the copy (src/hero-serve). Without JS
+   the illustrated hero above stays as it was. */
+.hero--scene {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: min(calc(100svh - var(--header-h)), 860px);
+  background: var(--navy-900);
+}
+
+.hero--scene::after {
+  display: none;
+}
+
+.hero--scene .hero__art {
+  display: none;
+}
+
+.hero-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+.hero--scene::before {
+  /* scrim: keeps the copy readable over the sky, and fades into the page */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(11 21 48 / 0.82) 0%, rgb(11 21 48 / 0.55) 34%, rgb(11 21 48 / 0) 58%),
+    linear-gradient(0deg, var(--navy-900) 0%, rgb(11 21 48 / 0.9) 13%, rgb(11 21 48 / 0) 36%);
+}
+
+.hero--scene .hero__lede {
+  color: #e6eaf3;
+}
+
+.hero-replay {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 132px;
+  z-index: 2;
+  min-height: 40px;
+  padding: 0.4em 1.1em;
+  border-radius: 999px;
+  border: 2px solid rgb(244 246 250 / 0.55);
+  background: rgb(11 21 48 / 0.45);
+  color: var(--line);
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.hero-replay:hover {
+  border-color: var(--line);
+  background: rgb(11 21 48 / 0.7);
+}
+
+@media (max-width: 879.98px) {
+  .hero--scene {
+    min-height: min(calc(100svh - var(--header-h)), 900px);
+  }
+
+  .hero--scene::before {
+    background:
+      linear-gradient(180deg, rgb(11 21 48 / 0.92) 0%, rgb(11 21 48 / 0.85) 42%, rgb(11 21 48 / 0) 60%),
+      linear-gradient(0deg, var(--navy-900) 0%, rgb(11 21 48 / 0.9) 14%, rgb(11 21 48 / 0) 30%);
+  }
+
+  .hero-replay {
+    bottom: 120px;
+  }
+}
+
 /* Stacked hero: tighten the copy so the animated target lands in the first screen */
 @media (max-width: 879.98px) {
   .hero {

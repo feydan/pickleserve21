@@ -10,19 +10,23 @@ export interface Vec {
 
 export type Points = 1 | 3 | 5;
 
-/** Section id → points scored when the ball lands there. Seven balls, 21 points. */
+/** The opening serve in the hero lands on the red 5, so the rally starts there. */
+export const START_SCORE = 5;
+
+/** Section id → points scored when the ball lands there. With the opening 5: nine balls, 21 points. */
 export const RALLY_STOPS: { id: string; points: Points }[] = [
-  { id: 'why', points: 3 },
-  { id: 'how', points: 5 },
+  { id: 'why', points: 1 },
+  { id: 'how', points: 3 },
   { id: 'play', points: 1 },
   { id: 'strategy', points: 3 },
-  { id: 'scorekeeper', points: 5 },
+  { id: 'scorekeeper', points: 1 },
   { id: 'scoresheet', points: 1 },
-  { id: 'care', points: 3 },
+  { id: 'care', points: 1 },
+  { id: 'contact', points: 5 },
 ];
 
-/** The section where the rally ends and the ball comes back to rest. */
-export const RALLY_END = 'contact';
+/** Where the rally ends and the ball comes back to rest on the paddle. */
+export const RALLY_END = '.site-footer';
 
 export interface Stop {
   /** Document y of the section's top edge (where the paddle meets the ball). */
@@ -40,6 +44,8 @@ export interface Layout {
   stops: Stop[];
   /** Document y where the rally ends (the ball comes back to rest on the paddle). */
   endTop: number;
+  /** Document position of the opening serve's ball, resting in the hero; the rally picks it up from there. */
+  serve?: Vec | null;
 }
 
 export interface Segment {
@@ -55,6 +61,8 @@ export interface Segment {
 
 export interface Rally {
   segments: Segment[];
+  /** The opening serve's ball coming back to the paddle for the first hit, or null without one. */
+  intro: Segment | null;
   /** Scroll distance of a full swing, either side of contact. */
   swingSpan: number;
   /** Peak ball height (px) on the way out. */
@@ -77,6 +85,8 @@ export interface Frame {
   enter: number;
   score: number;
   landed: boolean[];
+  /** 0–1 progress of the ball from the hero to the first hit, or null outside it. */
+  intro: number | null;
 }
 
 /** Where the mark sits in the viewport when the ball lands on it (fraction of vh). */
@@ -111,8 +121,14 @@ export function buildRally(layout: Layout): Rally {
     };
   });
   const firstHit = segments[0]?.hit ?? vh;
+  const first = segments[0];
+  const intro: Segment | null =
+    layout.serve && first && first.hit > 0
+      ? { hit: 0, bounce: 0, end: first.hit, from: layout.serve, mark: layout.serve, to: first.from, points: START_SCORE }
+      : null;
   return {
     segments,
+    intro,
     swingSpan: vh * 0.22,
     apex: Math.min(vh * 0.14, 120),
     enterEnd: Math.max(1, Math.min(vh * 0.35, firstHit * 0.6)),
@@ -147,7 +163,7 @@ export function swingAt(u: number): number {
 export function frameAt(rally: Rally, scroll: number): Frame {
   const { segments, apex, swingSpan } = rally;
   const landed = segments.map((s) => scroll >= s.bounce);
-  const score = segments.reduce((sum, s, i) => (landed[i] ? sum + s.points : sum), 0);
+  const score = segments.reduce((sum, s, i) => (landed[i] ? sum + s.points : sum), START_SCORE);
 
   let swing = 0;
   let nearest = Infinity;
@@ -166,10 +182,12 @@ export function frameAt(rally: Rally, scroll: number): Frame {
     enter: smooth(scroll / rally.enterEnd),
     score,
     landed,
+    intro: null,
   };
 
-  const seg = segments.find((s) => scroll >= s.hit && scroll < s.end);
+  const seg = [rally.intro, ...segments].find((s): s is Segment => !!s && scroll >= s.hit && scroll < s.end);
   if (!seg) return frame;
+  if (seg === rally.intro) frame.intro = clamp(scroll / seg.end, 0, 1);
 
   const now = ballAt(seg, scroll, apex);
   frame.ball = { x: now.ball.x, y: now.ball.y - scroll };

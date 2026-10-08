@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOUNCE_LINE, RALLY_STOPS, buildRally, frameAt, swingAt, type Layout } from './track';
+import { BOUNCE_LINE, RALLY_STOPS, START_SCORE, buildRally, frameAt, swingAt, type Layout } from './track';
 
 const layout: Layout = {
   vh: 800,
@@ -17,7 +17,7 @@ describe('rally', () => {
   const rally = buildRally(layout);
 
   it('scores 21 across the page', () => {
-    expect(RALLY_STOPS.reduce((sum, s) => sum + s.points, 0)).toBe(21);
+    expect(RALLY_STOPS.reduce((sum, s) => sum + s.points, START_SCORE)).toBe(21);
   });
 
   it('meets the paddle at the contact point on every hit', () => {
@@ -51,11 +51,24 @@ describe('rally', () => {
   });
 
   it('adds points as each ball lands and rewinds when scrolling back', () => {
-    expect(frameAt(rally, rally.segments[0]!.bounce - 1).score).toBe(0);
-    expect(frameAt(rally, rally.segments[1]!.bounce).score).toBe(8);
-    expect(frameAt(rally, 5000).score).toBe(9);
+    expect(frameAt(rally, rally.segments[0]!.bounce - 1).score).toBe(START_SCORE);
+    expect(frameAt(rally, rally.segments[1]!.bounce).score).toBe(START_SCORE + 8);
+    expect(frameAt(rally, 5000).score).toBe(START_SCORE + 9);
     expect(frameAt(rally, 5000).landed).toEqual([true, true, true]);
     expect(frameAt(rally, 500).landed).toEqual([false, false, false]);
+  });
+
+  it('picks up the opening serve ball and brings it to the first hit', () => {
+    const serve = { x: 900, y: 600 };
+    const withServe = buildRally({ ...layout, serve });
+    const start = frameAt(withServe, 0);
+    expect(start.ball).toEqual(serve);
+    expect(start.intro).toBe(0);
+    const hit = withServe.segments[0]!.hit;
+    const before = frameAt(withServe, hit - 0.001);
+    expect(before.ball!.x).toBeCloseTo(layout.contact.x, 1);
+    expect(before.ball!.y).toBeCloseTo(layout.contact.y, 1);
+    expect(frameAt(withServe, hit).intro).toBeNull();
   });
 
   it('winds back before contact and follows through after', () => {
